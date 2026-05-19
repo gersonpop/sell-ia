@@ -1,0 +1,31 @@
+{
+  "LanguageSwitcher": {
+    "label": "Language"
+  },
+  "HomePage": {
+    "title": "To get started, edit the page.tsx file.",
+    "description": "This demo already includes internationalization with Next.js. Use the switcher to move between Spanish, English and French.",
+    "primaryCta": "Deploy",
+    "secondaryCta": "Documentation",
+    "loginHeading": "Sign in",
+    "loginDescription": "Access your dashboard to monitor sales, catalog updates, and order flow in real time.",
+    "emailLabel": "Email",
+    "emailPlaceholder": "name@company.com",
+    "passwordLabel": "Password",
+    "loginButton": "Log in",
+    "socialGoogle": "Continue with Google",
+    "socialFacebook": "Continue with Facebook",
+    "socialLinkedIn": "Continue with LinkedIn",
+    "socialDisclaimer": "By continuing you agree to the terms and privacy policy.",
+    "login-title-1": "Centralized management",
+    "login-text-1": "Control inventory, purchases, and order tracking from one unified workspace.",
+    "login-title-2": "Live analytics",
+    "login-text-2": "Track conversion, average order value, and category performance minute by minute.",
+    "login-title-3": "Store automation",
+    "login-text-3": "Build smart rules for discounts, alerts, and customer-focused recommendations.",
+    "login-title-4": "Omnichannel experience",
+    "login-text-4": "Sync web, physical store, and marketplaces with instant product updates.",
+    "login-title-5": "Enterprise security",
+    "login-text-5": "Protect sensitive data with role-based access, audit logs, and continuous monitoring."
+  }
+}

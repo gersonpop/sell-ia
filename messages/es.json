@@ -1,0 +1,31 @@
+{
+  "LanguageSwitcher": {
+    "label": "Idioma"
+  },
+  "HomePage": {
+    "title": "Para comenzar, edita el archivo page.tsx.",
+    "description": "Esta demo ya incluye internacionalizacion con Next.js. Usa el selector para cambiar entre espanol, ingles y frances.",
+    "primaryCta": "Desplegar",
+    "secondaryCta": "Documentacion",
+    "loginHeading": "Iniciar sesion",
+    "loginDescription": "Accede a tu panel para revisar ventas, catalogo y pedidos en tiempo real.",
+    "emailLabel": "Correo",
+    "emailPlaceholder": "nombre@empresa.com",
+    "passwordLabel": "Contrasena",
+    "loginButton": "Entrar",
+    "socialGoogle": "Continuar con Google",
+    "socialFacebook": "Continuar con Facebook",
+    "socialLinkedIn": "Continuar con LinkedIn",
+    "socialDisclaimer": "Al continuar aceptas los terminos y la politica de privacidad.",
+    "login-title-1": "Gestion centralizada",
+    "login-text-1": "Controla inventario, compras y seguimiento de pedidos desde un solo lugar.",
+    "login-title-2": "Analitica en vivo",
+    "login-text-2": "Visualiza conversiones, ticket promedio y rendimiento por categoria cada minuto.",
+    "login-title-3": "Automatiza tu tienda",
+    "login-text-3": "Crea reglas inteligentes para descuentos, alertas y recomendaciones por cliente.",
+    "login-title-4": "Experiencia omnicanal",
+    "login-text-4": "Sincroniza web, tienda fisica y marketplaces con actualizaciones instantaneas.",
+    "login-title-5": "Seguridad empresarial",
+    "login-text-5": "Protege datos sensibles con acceso por roles, registros y monitoreo continuo."
+  }
+}

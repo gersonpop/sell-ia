@@ -1,0 +1,31 @@
+{
+  "LanguageSwitcher": {
+    "label": "Langue"
+  },
+  "HomePage": {
+    "title": "Pour commencer, modifiez le fichier page.tsx.",
+    "description": "Cette demo inclut deja l'internationalisation avec Next.js. Utilisez le selecteur pour passer entre espagnol, anglais et francais.",
+    "primaryCta": "Deployer",
+    "secondaryCta": "Documentation",
+    "loginHeading": "Connexion",
+    "loginDescription": "Accedez a votre tableau de bord pour suivre ventes, catalogue et commandes en temps reel.",
+    "emailLabel": "Email",
+    "emailPlaceholder": "nom@entreprise.com",
+    "passwordLabel": "Mot de passe",
+    "loginButton": "Se connecter",
+    "socialGoogle": "Continuer avec Google",
+    "socialFacebook": "Continuer avec Facebook",
+    "socialLinkedIn": "Continuer avec LinkedIn",
+    "socialDisclaimer": "En continuant, vous acceptez les conditions et la politique de confidentialite.",
+    "login-title-1": "Gestion centralisee",
+    "login-text-1": "Pilotez stock, achats et suivi des commandes depuis un espace unique.",
+    "login-title-2": "Analyses en direct",
+    "login-text-2": "Suivez conversion, panier moyen et performances par categorie minute par minute.",
+    "login-title-3": "Automatisation boutique",
+    "login-text-3": "Configurez des regles intelligentes pour promotions, alertes et recommandations clients.",
+    "login-title-4": "Experience omnicanale",
+    "login-text-4": "Synchronisez site web, magasin physique et marketplaces avec des mises a jour instantanees.",
+    "login-title-5": "Securite entreprise",
+    "login-text-5": "Protegez les donnees sensibles avec acces par roles, journaux d'audit et supervision continue."
+  }
+}

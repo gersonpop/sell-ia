@@ -2,6 +2,24 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
+### Auth.js (Google, Facebook, LinkedIn)
+
+1. Copy `.env.example` to `.env.local`.
+2. Fill provider credentials:
+   - `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`
+   - `AUTH_FACEBOOK_ID`, `AUTH_FACEBOOK_SECRET`
+   - `AUTH_LINKEDIN_ID`, `AUTH_LINKEDIN_SECRET`
+3. Set `AUTH_SECRET` with a long random value.
+4. `NEXTAUTH_URL` is optional in local development. If empty, Auth.js uses the current host/port from the request (for example `localhost:3001`).
+
+OAuth callback URLs for all providers:
+
+- `http://localhost:3001/api/auth/callback/google`
+- `http://localhost:3001/api/auth/callback/facebook`
+- `http://localhost:3001/api/auth/callback/linkedin`
+
+If you also run on another port (e.g. `3000`), add those callback URLs too in each provider console.
+
 First, run the development server:
 
 ```bash
