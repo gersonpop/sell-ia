@@ -307,6 +307,65 @@ async function softDeleteModuleRecord(actor: ActorContext, id: string) {
   if ((updated.rowCount ?? 0) === 0) throw new Error("Record not found");
 }
 
+function sanitizeMultidataText(value: unknown) {
+  return String(value ?? "").trim();
+}
+
+async function createStMultidataRecord(actor: ActorContext, payload: Record<string, unknown>) {
+  ensureSu(actor);
+  const initialsPk = sanitizeMultidataText(payload.Initials_PK);
+  const name = sanitizeMultidataText(payload.name);
+  const value = sanitizeMultidataText(payload.value);
+  const type = sanitizeMultidataText(payload.type);
+  const typeDescription = sanitizeMultidataText(payload.typeDescription) || null;
+  const typeUse = sanitizeMultidataText(payload.typeUse) || null;
+
+  if (!initialsPk || !name || !value || !type) {
+    throw new Error("Initials_PK, name, value and type are required");
+  }
+
+  const result = await getPgPool().query(
+    'insert into public."st_Multidata" ("Initials_PK", name, value, type, "typeDescription", "typeUse", created_at, updated_at) values ($1,$2,$3,$4,$5,$6,now(),now()) returning "Initials_PK", name, value, type, "typeDescription", "typeUse", created_at, updated_at',
+    [initialsPk, name, value, type, typeDescription, typeUse]
+  );
+
+  return result.rows[0];
+}
+
+async function updateStMultidataRecord(actor: ActorContext, valueId: string, patch: Record<string, unknown>) {
+  ensureSu(actor);
+  const current = await getPgPool().query(
+    'select "Initials_PK", name, value, type, "typeDescription", "typeUse" from public."st_Multidata" where value=$1 limit 1',
+    [valueId]
+  );
+  if ((current.rowCount ?? 0) === 0) throw new Error("Record not found");
+
+  const row = current.rows[0] as Record<string, unknown>;
+  const initialsPk = patch.Initials_PK !== undefined ? sanitizeMultidataText(patch.Initials_PK) : sanitizeMultidataText(row.Initials_PK);
+  const name = patch.name !== undefined ? sanitizeMultidataText(patch.name) : sanitizeMultidataText(row.name);
+  const value = patch.value !== undefined ? sanitizeMultidataText(patch.value) : sanitizeMultidataText(row.value);
+  const type = patch.type !== undefined ? sanitizeMultidataText(patch.type) : sanitizeMultidataText(row.type);
+  const typeDescription = patch.typeDescription !== undefined ? (sanitizeMultidataText(patch.typeDescription) || null) : (row.typeDescription ? String(row.typeDescription) : null);
+  const typeUse = patch.typeUse !== undefined ? (sanitizeMultidataText(patch.typeUse) || null) : (row.typeUse ? String(row.typeUse) : null);
+
+  if (!initialsPk || !name || !value || !type) {
+    throw new Error("Initials_PK, name, value and type are required");
+  }
+
+  const result = await getPgPool().query(
+    'update public."st_Multidata" set "Initials_PK"=$1, name=$2, value=$3, type=$4, "typeDescription"=$5, "typeUse"=$6, updated_at=now() where value=$7 returning "Initials_PK", name, value, type, "typeDescription", "typeUse", created_at, updated_at',
+    [initialsPk, name, value, type, typeDescription, typeUse, valueId]
+  );
+  if ((result.rowCount ?? 0) === 0) throw new Error("Record not found");
+  return result.rows[0];
+}
+
+async function deleteStMultidataRecord(actor: ActorContext, valueId: string) {
+  ensureSu(actor);
+  const result = await getPgPool().query('delete from public."st_Multidata" where value=$1 returning value', [valueId]);
+  if ((result.rowCount ?? 0) === 0) throw new Error("Record not found");
+}
+
 async function appendAuditDeny(actor: ActorContext, table: string, reason: string) {
   try {
     await getPgPool().query(
@@ -363,6 +422,7 @@ export async function listRecords(actor: ActorContext, tableParam: string, id: s
 export async function createRecord(actor: ActorContext, tableParam: string, payload: Record<string, unknown>) {
   const table = normalizeTable(tableParam);
   if (table === "modules") return createModuleRecord(actor, payload);
+  if (table === "st_multidata") return createStMultidataRecord(actor, payload);
   ensureSu(actor);
   throw new Error(`Create is not enabled for table '${table}'`);
 }
@@ -370,6 +430,7 @@ export async function createRecord(actor: ActorContext, tableParam: string, payl
 export async function updateRecord(actor: ActorContext, tableParam: string, id: string, patch: Record<string, unknown>) {
   const table = normalizeTable(tableParam);
   if (table === "modules") return updateModuleRecord(actor, id, patch);
+  if (table === "st_multidata") return updateStMultidataRecord(actor, id, patch);
   ensureSu(actor);
   throw new Error(`Update is not enabled for table '${table}'`);
 }
@@ -378,6 +439,10 @@ export async function deleteRecord(actor: ActorContext, tableParam: string, id: 
   const table = normalizeTable(tableParam);
   if (table === "modules") {
     await softDeleteModuleRecord(actor, id);
+    return;
+  }
+  if (table === "st_multidata") {
+    await deleteStMultidataRecord(actor, id);
     return;
   }
   ensureSu(actor);

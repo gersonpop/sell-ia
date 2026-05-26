@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import {usePathname} from "next/navigation";
 import type {SettingModule} from "@/app/[locale]/(protect)/setting/_lib";
 
 function isImageIcon(value: string | null) {
@@ -17,11 +20,15 @@ type EmbeddedPatternProps = {
   locale: string;
   parentTitle: string;
   items: SettingModule[];
-  activeRoute: string;
+  activeRoute?: string;
   children: React.ReactNode;
 };
 
 export function EmbeddedPattern({locale, parentTitle, items, activeRoute, children}: EmbeddedPatternProps) {
+  const pathname = usePathname();
+  const autoActiveRoute = `/${pathname.split("/").slice(2).join("/")}`;
+  const resolvedActiveRoute = activeRoute ?? autoActiveRoute;
+
   return (
     <section className="grid h-full w-full gap-2 lg:grid-cols-12">
       <aside id="menuPanel" className="h-full w-full rounded-2xl border border-slate-200 bg-white p-2 ml-0 text-slate-700 lg:col-span-3">
@@ -30,7 +37,7 @@ export function EmbeddedPattern({locale, parentTitle, items, activeRoute, childr
           {items.length === 0 ? <p className="text-xs text-slate-500">No hay modulos hijos activos.</p> : null}
           {items.map((item) => {
             const href = `/${locale}${item.route}`;
-            const active = item.route === activeRoute;
+            const active = item.route === resolvedActiveRoute;
             return (
               <Link
                 key={item.id}

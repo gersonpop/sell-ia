@@ -1,7 +1,6 @@
-import {ProtectedSidebarLayout} from "@/components/protected-sidebar-layout";
-import {EmbeddedPattern} from "@/components/module-patterns/EmbeddedPattern";
-import {NewPagePattern} from "@/components/module-patterns/NewPagePattern";
-import {getSettingChildren, getSettingParent, requireProtectedSettingContext} from "../_lib";
+import {requireProtectedSettingContext} from "../_lib";
+import {DataManager} from "./component.multidata";
+
 
 type SettingsMultidataPageProps = {
   params: Promise<{locale: string}>;
@@ -9,34 +8,8 @@ type SettingsMultidataPageProps = {
 
 export default async function SettingsMultidataPage({params}: SettingsMultidataPageProps) {
   const {locale} = await params;
-  const {session, actor, modules} = await requireProtectedSettingContext(locale);
-  const settingParent = getSettingParent(modules);
-  const children = getSettingChildren(modules, settingParent);
-  const current = modules.find((item) => item.route === "/setting/multidata") ?? null;
-  const mode = (settingParent?.pageContent ?? "embedded").toLowerCase();
+  await requireProtectedSettingContext(locale);
 
-  return (
-    <ProtectedSidebarLayout
-      locale={locale}
-      userName={session.user.name ?? "Usuario"}
-      userEmail={session.user.email ?? ""}
-      userImage={session.user.image ?? null}
-      actorId={actor.actorId}
-      actorRole={actor.role}
-      companyId={actor.companyId}
-      title="Configuracion"
-      description="Contenido renderizado desde modules dentro de contentSidebar"
-    >
-      {mode === "embedded" ? (
-        <EmbeddedPattern locale={locale} parentTitle={settingParent?.name ?? "Configuracion"} items={children} activeRoute="/setting/multidata">
-          <section className="h-full w-full rounded-2xl border border-slate-200 bg-white p-5 text-slate-700">
-            <h1 className="text-2xl font-semibold">{current?.name ?? "Multidata"}</h1>
-            <p className="mt-2 text-sm text-slate-500">Modelo embedded: menu de hijos a la izquierda y contenido activo a la derecha.</p>
-          </section>
-        </EmbeddedPattern>
-      ) : (
-        <NewPagePattern title={current?.name ?? "Multidata"} description="Modelo newPage dentro de contentSidebar." />
-      )}
-    </ProtectedSidebarLayout>
-  );
+  return <DataManager ></DataManager>
+ // return <NewPagePattern title={current?.description || current?.name || "Multidata"} description="Modelo newPage dentro de contentSidebar." />;
 }

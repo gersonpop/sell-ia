@@ -27,8 +27,6 @@ type ProtectedSidebarLayoutProps = {
   actorId: string;
   actorRole: "SU" | "cliente" | string;
   companyId?: string | null;
-  title?: string;
-  description?: string;
   children?: React.ReactNode;
 };
 
@@ -40,8 +38,6 @@ export function ProtectedSidebarLayout({
   actorId,
   actorRole,
   companyId = null,
-  title = "Bienvenido",
-  description = "Ingresaste con Google. Este panel simula datos de operacion, actividad de ventas y estado general para validar la interfaz protegida.",
   children
 }: ProtectedSidebarLayoutProps) {
   const pathname = usePathname();
@@ -64,8 +60,8 @@ export function ProtectedSidebarLayout({
   const hidden = false;
 
   const sidebarWidthClass = useMemo(() => {
-    if (expanded) return "w-[290px]";
-    return "w-[96px]";
+    if (expanded) return "w-[256px]";
+    return "w-[72px]";
   }, [expanded]);
 
   const navItems = useMemo(
@@ -175,7 +171,7 @@ export function ProtectedSidebarLayout({
                 <span className="pointer-events-none absolute inset-[2px] rounded-[14px] border border-white/12" />
               </>
             )}
-            <div className={`shrink-0 ${compact ? "p-2" : "border-b border-white/18 p-4"}`}>
+            <div className={`shrink-0 ${compact ? "p-2 px-1" : "border-b border-white/18 p-4"}`}>
               <div className={`flex items-center ${expanded ? "gap-3" : "justify-center"}`}>
                 <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full border border-white/30 bg-white/10">
                   {userImage && !avatarError ? (
@@ -257,7 +253,7 @@ export function ProtectedSidebarLayout({
                 <div className="rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-xs text-white/85">Sin modulos disponibles</div>
               ) : null}
               {!modulesLoading && !modulesError ? (
-              <nav className={compact ? "space-y-2" : "space-y-1"}>
+              <nav className={compact ? "space-y-" : "space-y-1"}>
                 {navItems.map((item) => {
                   const href = `/${locale}${item.path}`;
                   const isActive = pathname === href;
@@ -299,7 +295,7 @@ export function ProtectedSidebarLayout({
               </div>
             </div>
 
-            <div className={`shrink-0 ${compact ? "border-t border-white/12 p-2" : "border-t border-white/18 p-3"}`}>
+            <div className={`shrink-0 ${compact ? "border-t border-white/12 py-1 px-2" : "border-t border-white/18 p-3"}`}>
               <div className="space-y-2">
                 <div className="relative">
                   <button

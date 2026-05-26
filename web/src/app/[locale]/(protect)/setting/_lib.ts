@@ -8,6 +8,7 @@ export type SettingModule = {
   id: string;
   code: string;
   name: string;
+  description: string;
   route: string;
   icon: string | null;
   parent: string;
@@ -51,6 +52,7 @@ export async function requireProtectedSettingContext(locale: string) {
       id: toText(row.id),
       code: toText(row.code),
       name: toText(row.name),
+      description: toText(row.description),
       route: toText(row.route),
       icon: toText(row.icon) || null,
       parent: toText(row.parent),

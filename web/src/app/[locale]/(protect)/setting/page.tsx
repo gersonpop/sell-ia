@@ -1,6 +1,4 @@
 import {redirect} from "next/navigation";
-import {ProtectedSidebarLayout} from "@/components/protected-sidebar-layout";
-import {EmbeddedPattern} from "@/components/module-patterns/EmbeddedPattern";
 import {NewPagePattern} from "@/components/module-patterns/NewPagePattern";
 import {getSettingChildren, getSettingParent, requireProtectedSettingContext} from "./_lib";
 
@@ -10,53 +8,25 @@ type SettingsPageProps = {
 
 export default async function SettingsPage({params}: SettingsPageProps) {
   const {locale} = await params;
-  const {session, actor, modules} = await requireProtectedSettingContext(locale);
+  const {modules} = await requireProtectedSettingContext(locale);
   const settingParent = getSettingParent(modules);
 
   if (!settingParent) {
     return (
-      <ProtectedSidebarLayout
-        locale={locale}
-        userName={session.user.name ?? "Usuario"}
-        userEmail={session.user.email ?? ""}
-        userImage={session.user.image ?? null}
-        actorId={actor.actorId}
-        actorRole={actor.role}
-        companyId={actor.companyId}
-        title="Configuracion"
-        description="Modulo no configurado en tabla modules"
-      >
-        <NewPagePattern title="Configuracion" description="No existe un modulo raiz activo para /setting en la tabla modules." />
-      </ProtectedSidebarLayout>
+      <NewPagePattern title="Configuracion" description="No existe un modulo raiz activo para /setting en la tabla modules." />
     );
   }
 
   const children = getSettingChildren(modules, settingParent);
-  const contentMode = (settingParent.pageContent ?? "embedded").toLowerCase();
 
-  if (contentMode === "embedded" && children.length > 0) {
+  if (children.length > 0) {
     redirect(`/${locale}${children[0].route}`);
   }
 
   return (
-    <ProtectedSidebarLayout
-      locale={locale}
-      userName={session.user.name ?? "Usuario"}
-      userEmail={session.user.email ?? ""}
-      userImage={session.user.image ?? null}
-      actorId={actor.actorId}
-      actorRole={actor.role}
-      companyId={actor.companyId}
-      title="Configuracion"
-      description="Contenido basado en configuracion de modules"
-    >
-      {contentMode === "embedded" ? (
-        <EmbeddedPattern locale={locale} parentTitle={settingParent.name} items={children} activeRoute="/setting" >
-          <p className="text-sm text-slate-500">Selecciona un modulo hijo del panel izquierdo.</p>
-        </EmbeddedPattern>
-      ) : (
-        <NewPagePattern title={settingParent.name} description="Pagina renderizada con patron newPage." />
-      )}
-    </ProtectedSidebarLayout>
+    <section className="h-full w-full rounded-2xl border border-slate-200 bg-white p-5 text-slate-700">
+      <h1 className="text-2xl font-semibold">{settingParent.description || settingParent.name}</h1>
+      <p className="mt-2 text-sm text-slate-500">Este modulo usa patron embedded. Selecciona un modulo hijo en el panel izquierdo.</p>
+    </section>
   );
 }
