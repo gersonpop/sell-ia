@@ -1,5 +1,5 @@
 import {getTranslations} from "next-intl/server";
-import {requireProtectedSettingContext} from "../_lib";
+import {requireProtectedSettingContext} from "../layout";
 import {ModulesConfigClient} from "./component.modules";
 type SettingsModulesPageProps = {
   params: Promise<{locale: string}>;

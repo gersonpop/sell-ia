@@ -27,6 +27,9 @@ type ProtectedSidebarLayoutProps = {
   actorId: string;
   actorRole: "SU" | "cliente" | string;
   companyId?: string | null;
+  initialModules?: DynamicModuleNav[];
+  title?: string;
+  description?: string;
   children?: React.ReactNode;
 };
 
@@ -38,6 +41,7 @@ export function ProtectedSidebarLayout({
   actorId,
   actorRole,
   companyId = null,
+  initialModules,
   children
 }: ProtectedSidebarLayoutProps) {
   const pathname = usePathname();
@@ -50,8 +54,8 @@ export function ProtectedSidebarLayout({
   const navScrollRef = useRef<HTMLDivElement | null>(null);
   const [canScrollUp, setCanScrollUp] = useState(false);
   const [canScrollDown, setCanScrollDown] = useState(false);
-  const [dynamicModules, setDynamicModules] = useState<DynamicModuleNav[]>([]);
-  const [modulesLoading, setModulesLoading] = useState(true);
+  const [dynamicModules, setDynamicModules] = useState<DynamicModuleNav[]>(initialModules ?? []);
+  const [modulesLoading, setModulesLoading] = useState(initialModules === undefined);
   const [modulesError, setModulesError] = useState<string | null>(null);
   const normalizedActorRole: "SU" | "cliente" = String(actorRole).trim().toLowerCase() === "su" ? "SU" : "cliente";
 
@@ -70,12 +74,18 @@ export function ProtectedSidebarLayout({
         id: item.id,
         label: item.name,
         icon: item.icon ?? "◦",
-        path: item.route ?? ""
+        path: item.route ?? "",
+        badge: (item as any).badge ?? undefined
       })),
     [dynamicModules]
   );
 
   useEffect(() => {
+    if (initialModules !== undefined) {
+      setDynamicModules(initialModules);
+      setModulesLoading(false);
+      return;
+    }
     let cancelled = false;
     const loadModules = async () => {
       setModulesLoading(true);
@@ -114,7 +124,7 @@ export function ProtectedSidebarLayout({
     return () => {
       cancelled = true;
     };
-  }, [actorId, normalizedActorRole, companyId]);
+  }, [actorId, normalizedActorRole, companyId, initialModules]);
 
   const updateScrollHints = () => {
     const element = navScrollRef.current;

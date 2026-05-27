@@ -41,10 +41,12 @@ Como desarrollador, al crear un modulo debo definir su parent, contenido y orden
 ## Reglas funcionales
 1. Sidebar siempre presente en rutas protegidas.
 2. Solo modulos activos con `parent="/"` aparecen en sidebar principal.
-3. Si `content=embedded`, el parent renderiza:
-   - panel izquierdo con hijos ordenados,
-   - panel derecho con contenido del hijo seleccionado.
-4. Si `content=newPage`, el parent muestra boton/enlace para navegar a la pagina del hijo.
+3. Si `content=embedded`, se debe utilizar el patron de diseno `EmbeddedPattern` (ubicado en `web/src/components/module-patterns/EmbeddedPattern.tsx`), el cual renderiza:
+   - panel izquierdo (`menuPanel`) con hijos ordenados por `sort_order`.
+   - panel derecho (`contentPanel`) con el contenido del hijo seleccionado.
+4. Si `content=newPage`, se debe utilizar el patron de diseno `NewPagePattern` (ubicado en `web/src/components/module-patterns/NewPagePattern.tsx`) para la estructura de la pagina. Su renderizado depende de su posicion jerarquica:
+   - **Parent raiz (`parent="/"`)**: Si es un modulo raiz, la pagina se renderiza directamente en el contenedor principal (`sidebarContent`).
+   - **Hijo de un modulo embebido**: Si es hijo de un modulo embebido, se debe renderizar dentro del `contentPanel` del modulo padre embebido.
 5. `sort_order` ordena por contexto:
    - raiz contra raiz cuando `parent="/"`,
    - hijos contra hijos del mismo parent cuando `parent=<id>`.

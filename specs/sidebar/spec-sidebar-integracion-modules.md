@@ -49,6 +49,7 @@ Como desarrollador de la plataforma, necesito integrar sidebar y modules para qu
 8. Si no hay modulos validos, se muestra estado vacio controlado del sidebar.
 9. Si falla la lectura de datos, se muestra estado de error amigable y no se rompe el resto de la app.
 10. El sidebar no debe depender de endpoints especificos nuevos para este caso.
+11. **Optimización de renderizado (initialModules)**: El componente del sidebar debe soportar la recepción opcional de `initialModules` desde el servidor (Server Component) para inicializar su estado de manera estática inmediata. Si se provee `initialModules`, se debe omitir el parpadeo de carga amigable (skeleton loader) y la llamada de red client-side redundante.
 
 ## Estados y casos borde
 - **Loading:** mientras se consulta `modules`, mostrar skeleton/placeholder de sidebar.
@@ -154,6 +155,7 @@ Como desarrollador de la plataforma, necesito integrar sidebar y modules para qu
 5. Registros con `status="inactive"` o `status="deprecated"` no se muestran.
 6. Existen estados visuales de carga, vacio y error correctamente manejados.
 7. Las pruebas unitarias, de integracion y E2E definidas pasan.
+8. El sidebar soporta la inyección estática de `initialModules` desde el servidor para evitar llamadas cliente innecesarias y eliminar parpadeos de carga del skeleton.
 
 ## Suposiciones confirmadas
 1. Para visibilidad en sidebar principal, solo cuenta `status = 'active'`; `inactive` y `deprecated` no se muestran.

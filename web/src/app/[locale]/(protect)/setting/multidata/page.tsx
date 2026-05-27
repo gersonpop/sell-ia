@@ -1,4 +1,4 @@
-import {requireProtectedSettingContext} from "../_lib";
+import {requireProtectedSettingContext} from "../layout";
 import {DataManager} from "./component.multidata";
 
 

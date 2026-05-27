@@ -5,7 +5,7 @@ import {useCallback, useEffect, useMemo, useState} from "react";
 const DEFAULT_COLUMNS = ["id", "name", "value", "type", "actions"];
 
 export function DataManager() {
-  const [rows, setRows] = useState([]);
+  const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
@@ -14,13 +14,13 @@ export function DataManager() {
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [showColumnsMenu, setShowColumnsMenu] = useState(false);
-  const [visibleColumns, setVisibleColumns] = useState(new Set(DEFAULT_COLUMNS));
-  const [openRowMenu, setOpenRowMenu] = useState(null);
+  const [visibleColumns, setVisibleColumns] = useState<Set<string>>(new Set(DEFAULT_COLUMNS));
+  const [openRowMenu, setOpenRowMenu] = useState<number | null>(null);
   const [openDrawer, setOpenDrawer] = useState(false);
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [saving, setSaving] = useState(false);
   const [actionMode, setActionMode] = useState("add");
-  const [selectedRow, setSelectedRow] = useState(null);
+  const [selectedRow, setSelectedRow] = useState<any>(null);
   const [newType, setNewType] = useState({type: "", typeDescription: "", typeUse: ""});
   const [form, setForm] = useState({Initials_PK: "", name: "", value: "", type: "", typeDescription: "", typeUse: "", language: ""});
 
@@ -58,7 +58,7 @@ export function DataManager() {
       if (!response.ok) throw new Error(body?.message || "No se pudo cargar multidata");
       const data = Array.isArray(body?.data) ? body.data : [];
       setRows(data);
-      const defaultLanguage = data.find((row) => String(row?.type || "") === "language")?.value;
+      const defaultLanguage = data.find((row: any) => String(row?.type || "") === "language")?.value;
       if (defaultLanguage) {
         setLanguage((prev) => (prev === "all" ? String(defaultLanguage) : prev));
         setForm((prev) => ({...prev, language: prev.language || String(defaultLanguage)}));
@@ -138,7 +138,7 @@ export function DataManager() {
     [rows, form.type, form.language]
   );
 
-  const setFormField = (name, value) => {
+  const setFormField = (name: string, value: string) => {
     setForm((prev) => ({...prev, [name]: value}));
   };
 
@@ -151,7 +151,7 @@ export function DataManager() {
     window.setTimeout(() => setDrawerVisible(true), 10);
   };
 
-  const openEditDrawer = (row) => {
+  const openEditDrawer = (row: any) => {
     setActionMode("edit");
     setSelectedRow(row);
     setNewType({
@@ -226,7 +226,7 @@ export function DataManager() {
     }
   };
 
-  const deleteItem = async (valueId) => {
+  const deleteItem = async (valueId: any) => {
     const ok = window.confirm("¿Eliminar este registro?");
     if (!ok) return;
     setError("");
@@ -244,7 +244,7 @@ export function DataManager() {
     }
   };
 
-  const toggleColumn = (columnKey) => {
+  const toggleColumn = (columnKey: string) => {
     setVisibleColumns((prev) => {
       const next = new Set(prev);
       if (next.has(columnKey)) {

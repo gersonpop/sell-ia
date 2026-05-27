@@ -1,6 +1,6 @@
 import {redirect} from "next/navigation";
 import {NewPagePattern} from "@/components/module-patterns/NewPagePattern";
-import {getSettingChildren, getSettingParent, requireProtectedSettingContext} from "./_lib";
+import {getSettingChildren, getSettingParent, requireProtectedSettingContext} from "./layout";
 
 type SettingsPageProps = {
   params: Promise<{locale: string}>;

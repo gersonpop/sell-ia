@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import {usePathname} from "next/navigation";
-import type {SettingModule} from "@/app/[locale]/(protect)/setting/_lib";
+import type {SettingModule} from "@/app/[locale]/(protect)/setting/layout";
 
 function isImageIcon(value: string | null) {
   if (!value) return false;
