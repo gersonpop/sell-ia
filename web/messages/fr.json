@@ -77,7 +77,14 @@
       "status": "Statut",
       "updatedAt": "Mis a jour",
       "actions": "Actions",
-      "empty": "Aucun module pour les filtres actuels."
+      "empty": "Aucun module pour les filtres actuels.",
+      "id": "ID",
+      "description": "Description",
+      "icon": "Icône",
+      "sort_order": "Ordre",
+      "parent": "Parent",
+      "scope_id": "Scope",
+      "content": "Contenu"
     },
     "actions": {
       "edit": "Modifier",

@@ -51,7 +51,7 @@ function isRoleScope(item: ScopeCatalogItem) {
 
 type Props = {
   actorId: string;
-  actorRole: "SU" | "cliente";
+  actorRole: "SU" | "Adm" | "user";
   companyId: string | null;
 };
 
@@ -81,7 +81,7 @@ export function ModulesConfigClient({actorId, actorRole, companyId}: Props) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
   const [scopeFilter, setScopeFilter] = useState<string>("all");
-  const [sortBy, setSortBy] = useState<"code" | "name" | "status" | "updated_at">("name");
+  const [sortBy, setSortBy] = useState<keyof ModuleItem>("name");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(5);
@@ -193,10 +193,20 @@ export function ModulesConfigClient({actorId, actorRole, companyId}: Props) {
     });
 
     const sorted = [...filtered].sort((a, b) => {
-      const left = String(a[sortBy] ?? "").toLowerCase();
-      const right = String(b[sortBy] ?? "").toLowerCase();
-      if (left === right) return 0;
-      const comparison = left > right ? 1 : -1;
+      let left = a[sortBy];
+      let right = b[sortBy];
+
+      if (left === null || left === undefined) left = "";
+      if (right === null || right === undefined) right = "";
+
+      if (typeof left === "number" && typeof right === "number") {
+        return sortDir === "asc" ? left - right : right - left;
+      }
+
+      const leftStr = String(left).toLowerCase();
+      const rightStr = String(right).toLowerCase();
+      if (leftStr === rightStr) return 0;
+      const comparison = leftStr > rightStr ? 1 : -1;
       return sortDir === "asc" ? comparison : -comparison;
     });
 
@@ -212,10 +222,17 @@ export function ModulesConfigClient({actorId, actorRole, companyId}: Props) {
 
   const tableColumns = useMemo(
     () => [
+      {key: "id", label: t("table.id")},
       {key: "code", label: t("table.code")},
       {key: "name", label: t("table.name")},
+      {key: "description", label: t("table.description")},
       {key: "route", label: t("table.route")},
+      {key: "icon", label: t("table.icon")},
+      {key: "sort_order", label: t("table.sort_order")},
       {key: "status", label: t("table.status")},
+      {key: "parent", label: t("table.parent")},
+      {key: "scope_id", label: t("table.scope_id")},
+      {key: "content", label: t("table.content")},
       {key: "updated_at", label: t("table.updatedAt")},
       {key: "actions", label: t("table.actions")}
     ],
@@ -360,7 +377,7 @@ export function ModulesConfigClient({actorId, actorRole, companyId}: Props) {
     }
   }
 
-  function setSort(column: "code" | "name" | "status" | "updated_at") {
+  function setSort(column: keyof ModuleItem) {
     if (sortBy === column) {
       setSortDir((current) => (current === "asc" ? "desc" : "asc"));
       return;
@@ -474,8 +491,8 @@ export function ModulesConfigClient({actorId, actorRole, companyId}: Props) {
                 <tr>
                   {headerColumns.map((column) => (
                     <th key={column.key} className="px-4 py-3">
-                      {column.key === "code" || column.key === "name" || column.key === "status" || column.key === "updated_at" ? (
-                        <button className="font-medium" onClick={() => setSort(column.key as "code" | "name" | "status" | "updated_at")}>{column.label}</button>
+                      {column.key !== "actions" && column.key !== "icon" ? (
+                        <button className="font-medium" onClick={() => setSort(column.key as keyof ModuleItem)}>{column.label}</button>
                       ) : (
                         column.label
                       )}
@@ -484,14 +501,40 @@ export function ModulesConfigClient({actorId, actorRole, companyId}: Props) {
                 </tr>
               </thead>
               <tbody>
-                {pagedModules.map((item) => (
+                {pagedModules.map((item, rowIndex) => (
                   <tr key={item.id} className="border-t border-slate-100">
                     {headerColumns.map((column) => {
+                      if (column.key === "id") return <td key={`${item.id}-id`} className="px-4 py-3 font-mono text-xs">{item.id}</td>;
                       if (column.key === "code") return <td key={`${item.id}-code`} className="px-4 py-3 font-medium">{item.code}</td>;
                       if (column.key === "name") return <td key={`${item.id}-name`} className="px-4 py-3">{item.name}</td>;
+                      if (column.key === "description") return <td key={`${item.id}-description`} className="px-4 py-3 max-w-[200px] truncate">{item.description ?? "-"}</td>;
                       if (column.key === "route") return <td key={`${item.id}-route`} className="px-4 py-3">{item.route ?? "-"}</td>;
+                      if (column.key === "icon") {
+                        return (
+                          <td key={`${item.id}-icon`} className="px-4 py-3">
+                            {item.icon ? (
+                              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-300 p-1">
+                                <Image src={item.icon} alt="Icon" width={24} height={24} className="h-full w-full object-contain" unoptimized />
+                              </div>
+                            ) : (
+                              "-"
+                            )}
+                          </td>
+                        );
+                      }
+                      if (column.key === "sort_order") return <td key={`${item.id}-order`} className="px-4 py-3">{item.sort_order}</td>;
                       if (column.key === "status") return <td key={`${item.id}-status`} className="px-4 py-3">{item.status}</td>;
+                      if (column.key === "parent") return <td key={`${item.id}-parent`} className="px-4 py-3 font-mono text-xs">{item.parent ?? "-"}</td>;
+                      if (column.key === "scope_id") {
+                        const scopeValue = scopes.find(s => s.id === item.scope_id)?.value ?? item.scope_id;
+                        return <td key={`${item.id}-scope`} className="px-4 py-3">{scopeValue}</td>;
+                      }
+                      if (column.key === "content") {
+                        const contentLabel = pageContents.find(p => p.value === item.content)?.label ?? item.content ?? "-";
+                        return <td key={`${item.id}-content`} className="px-4 py-3">{contentLabel}</td>;
+                      }
                       if (column.key === "updated_at") return <td key={`${item.id}-updated`} className="px-4 py-3">{item.updated_at ? new Date(item.updated_at).toLocaleString() : "-"}</td>;
+                      const isNearBottom = pagedModules.length > 2 && rowIndex >= pagedModules.length - 2;
                       return (
                         <td key={`${item.id}-actions`} className="relative px-4 py-3 text-right">
                           <button
@@ -505,7 +548,9 @@ export function ModulesConfigClient({actorId, actorRole, companyId}: Props) {
                             ⋮
                           </button>
                           {openRowMenu === item.id ? (
-                            <div className="absolute right-4 z-10 mt-1 w-36 rounded-lg border border-slate-200 bg-white p-1 shadow-lg">
+                            <div className={`absolute right-4 z-30 w-36 rounded-lg border border-slate-200 bg-white p-1 shadow-lg ${
+                              isNearBottom ? "bottom-full mb-1" : "top-full mt-1"
+                            }`}>
                               <button type="button" onClick={() => onEdit(item)} className="block w-full rounded-md px-2 py-1.5 text-left text-xs hover:bg-slate-50">{t("actions.edit")}</button>
                               {item.status === "active" ? (
                                 <button type="button" onClick={() => void onChangeStatus(item, "inactive")} className="block w-full rounded-md px-2 py-1.5 text-left text-xs text-rose-700 hover:bg-rose-50">{t("actions.deactivate")}</button>
@@ -629,7 +674,11 @@ export function ModulesConfigClient({actorId, actorRole, companyId}: Props) {
                 <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm md:row-span-2">
                   <label className="mb-2 block text-xs text-slate-500">{t("form.icon")}</label>
                   <input type="file" accept="image/*" onChange={(e) => void onIconFile(e.target.files?.[0] ?? null)} className="text-xs" />
-                  {iconPreview ? <Image src={iconPreview} alt="Preview" width={40} height={40} className="mt-2 rounded object-cover" unoptimized /> : null}
+                  {iconPreview ? (
+                    <div className="mt-2 flex h-12 w-12 items-center justify-center rounded-xl bg-slate-400 p-1.5">
+                      <Image src={iconPreview} alt="Preview" width={36} height={36} className="h-full w-full object-contain" unoptimized />
+                    </div>
+                  ) : null}
                 </div>
                 <div className="md:col-span-2">
                   <label className="mb-1 block text-xs text-slate-500">{t("form.descriptionField")}</label>

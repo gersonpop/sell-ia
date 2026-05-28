@@ -77,7 +77,14 @@
       "status": "Status",
       "updatedAt": "Updated",
       "actions": "Actions",
-      "empty": "No modules match the current filters."
+      "empty": "No modules match the current filters.",
+      "id": "ID",
+      "description": "Description",
+      "icon": "Icon",
+      "sort_order": "Order",
+      "parent": "Parent",
+      "scope_id": "Scope",
+      "content": "Content"
     },
     "actions": {
       "edit": "Edit",
