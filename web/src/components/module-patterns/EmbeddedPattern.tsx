@@ -30,11 +30,11 @@ export function EmbeddedPattern({locale, parentTitle, items, activeRoute, childr
   const resolvedActiveRoute = activeRoute ?? autoActiveRoute;
 
   return (
-    <section className="grid h-full w-full gap-2 lg:grid-cols-12">
-      <aside id="menuPanel" className="h-full w-full rounded-2xl border border-slate-200 bg-white p-2 ml-0 text-slate-700 lg:col-span-3">
-        <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">{parentTitle}</h2>
-        <nav className="mt-3 space-y-2">
-          {items.length === 0 ? <p className="text-xs text-slate-500">No hay modulos hijos activos.</p> : null}
+    <section className="grid h-full w-full gap-2 lg:grid-cols-12 overflow-hidden">
+      <aside id="menuPanel" className="h-full w-full rounded-2xl border border-slate-200 bg-white p-4 ml-0 text-slate-700 lg:col-span-3 flex flex-col overflow-hidden">
+        <h2 className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400 border-b border-slate-100 pb-2">{parentTitle}</h2>
+        <nav className="mt-3 space-y-2 flex-1 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-slate-200">
+          {items.length === 0 ? <p className="text-xs text-slate-500">No hay módulos hijos activos.</p> : null}
           {items.map((item) => {
             const href = `/${locale}${item.route}`;
             const active = item.route === resolvedActiveRoute;
@@ -42,8 +42,8 @@ export function EmbeddedPattern({locale, parentTitle, items, activeRoute, childr
               <Link
                 key={item.id}
                 href={href}
-                className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-sm transition ${
-                  active ? "border-cyan-300 bg-cyan-50 text-cyan-900" : "border-slate-200 hover:bg-slate-50"
+                className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium transition ${
+                  active ? "border-cyan-300 bg-cyan-50 text-cyan-900 font-bold" : "border-slate-200 hover:bg-slate-50 text-slate-600"
                 }`}
               >
                 <span className="grid h-5 w-5 place-items-center overflow-hidden rounded-sm text-base leading-none">
@@ -55,7 +55,7 @@ export function EmbeddedPattern({locale, parentTitle, items, activeRoute, childr
           })}
         </nav>
       </aside>
-      <div id="contentPanel" className="h-full w-full rounded-2xl border border-slate-200 bg-white p-2 text-slate-700 lg:col-span-9">
+      <div id="contentPanel" className="h-full w-full rounded-2xl border border-slate-200 bg-white p-2 text-slate-700 lg:col-span-9 flex flex-col overflow-hidden">
         {children}
       </div>
     </section>

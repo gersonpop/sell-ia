@@ -10,6 +10,7 @@ export default async function DynamicNewPage({params}: PageProps) {
     <NewPagePattern
       title="roles"
       description="roles"
+      plain={true}
     >
       <DynamicComponent />
     </NewPagePattern>

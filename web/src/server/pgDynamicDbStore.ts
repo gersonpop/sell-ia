@@ -2,6 +2,32 @@ import {getPgPool} from "@/server/postgres";
 import {access, mkdir, writeFile} from "node:fs/promises";
 import {constants as fsConstants} from "node:fs";
 import {join} from "node:path";
+import {invalidateCatalogCache} from "@/server/auth/onboarding";
+
+// Store in-memory cache for static tables
+type StaticCacheEntry = {
+  data: any[];
+  expiresAt: number;
+};
+const staticStoreCache: Record<string, StaticCacheEntry> = {};
+const STATIC_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+export function invalidateStoreCache(tableParam?: string) {
+  if (tableParam) {
+    const table = tableParam.trim().toLowerCase();
+    delete staticStoreCache[table];
+  } else {
+    for (const key of Object.keys(staticStoreCache)) {
+      delete staticStoreCache[key];
+    }
+  }
+  // Also invalidate the onboarding catalog cache
+  try {
+    invalidateCatalogCache();
+  } catch {
+    // Ignore any import or timing issues
+  }
+}
 
 export type ActorScope = "SU" | "cliente";
 
@@ -15,8 +41,8 @@ const TABLE_MAP = {
   modules: 'public.modules',
   users: 'public."PlatformUser"',
   oauth_sessions: 'public.oauth_sessions',
-  roles: 'public.roles',
-  role_assignments: 'public.role_assignments',
+  roles: 'public."Role"',
+  role_assignments: 'public."UserRole"',
   audit_logs: 'public.audit_logs',
   st_multidata: 'public."st_Multidata"',
   st_country: 'public."st_Country"',
@@ -632,18 +658,188 @@ async function deletePlatformUserRecord(actor: ActorContext, id: string) {
   if ((result.rowCount ?? 0) === 0) throw new Error("User not found");
 }
 
+async function createRoleRecord(actor: ActorContext, payload: Record<string, unknown>) {
+  const name = String(payload.name || "").trim();
+  const key = String(payload.key_id || payload.key || "").trim().toUpperCase().slice(0, 5);
+  const description = String(payload.description || "").trim();
+  const scope = String(payload.scope || "user").trim();
+  const companyId = actor.role !== "SU" ? actor.companyId : String(payload.company_id || payload.companyId || "900000000").trim();
+  
+  if (!name || !key) throw new Error("name and key_id are required");
+  
+  const id = `ROL-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+  
+  await getPgPool().query(
+    'insert into public."Role" (id, "companyId", name, key, description, scope, "createdAt", "updatedAt") values ($1, $2, $3, $4, $5, $6, now(), now())',
+    [id, companyId, name, key, description, scope]
+  );
+  
+  return {
+    id,
+    key_id: key,
+    name,
+    description,
+    scope,
+    company_id: companyId,
+    status: "active",
+    permissions: {}
+  };
+}
+
+async function updateRoleRecord(actor: ActorContext, id: string, patch: Record<string, unknown>) {
+  const name = patch.name !== undefined ? String(patch.name).trim() : null;
+  const description = patch.description !== undefined ? String(patch.description).trim() : null;
+  const scope = patch.scope !== undefined ? String(patch.scope).trim() : null;
+  
+  const updates: string[] = [];
+  const values: any[] = [];
+  let idx = 1;
+  if (name !== null) {
+    updates.push(`name=$${idx++}`);
+    values.push(name);
+  }
+  if (description !== null) {
+    updates.push(`description=$${idx++}`);
+    values.push(description);
+  }
+  if (scope !== null) {
+    updates.push(`scope=$${idx++}`);
+    values.push(scope);
+  }
+  
+  if (updates.length > 0) {
+    values.push(id);
+    await getPgPool().query(
+      `update public."Role" set ${updates.join(", ")}, "updatedAt"=now() where id=$${idx}`,
+      values
+    );
+  }
+  
+  const permissions = patch.permissions as Record<string, any> | undefined;
+  if (permissions) {
+    for (const [moduleId, perm] of Object.entries(permissions)) {
+      const canRead = !!perm.read;
+      const canCreate = !!perm.create;
+      const canUpdate = !!perm.update;
+      const canDelete = !!perm.delete;
+      const actions = perm.microroles || {};
+      
+      const existing = await getPgPool().query(
+        'select id from public."RolePermission" where "roleId"=$1 and "moduleId"=$2',
+        [id, moduleId]
+      );
+      
+      if (existing.rows.length > 0) {
+        await getPgPool().query(
+          'update public."RolePermission" set "canRead"=$1, "canCreate"=$2, "canUpdate"=$3, "canDelete"=$4, actions=$5 where id=$6',
+          [canRead, canCreate, canUpdate, canDelete, JSON.stringify(actions), existing.rows[0].id]
+        );
+      } else {
+        const permId = `RPM-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+        await getPgPool().query(
+          'insert into public."RolePermission" (id, "roleId", "moduleId", "canRead", "canCreate", "canUpdate", "canDelete", actions) values ($1, $2, $3, $4, $5, $6, $7, $8)',
+          [permId, id, moduleId, canRead, canCreate, canUpdate, canDelete, JSON.stringify(actions)]
+        );
+      }
+    }
+  }
+  
+  return { id, ok: true };
+}
+
+async function deleteRoleRecord(actor: ActorContext, id: string) {
+  const assigned = await getPgPool().query(
+    'select id from public."UserRole" where "roleId"=$1 limit 1',
+    [id]
+  );
+  if (assigned.rows.length > 0) {
+    throw new Error("No se puede eliminar el rol porque tiene usuarios asignados.");
+  }
+  await getPgPool().query('delete from public."RolePermission" where "roleId"=$1', [id]);
+  await getPgPool().query('delete from public."Role" where id=$1', [id]);
+}
+
 export async function listRecords(actor: ActorContext, tableParam: string, id: string | null) {
   const table = normalizeTable(tableParam);
+
+  const isStaticTable = ["modules", "st_multidata", "st_country", "st_state", "st_city"].includes(table);
+  if (isStaticTable && !id) {
+    const cached = staticStoreCache[table];
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.data;
+    }
+  }
+
+  if (table === "roles") {
+    let query = 'select * from public."Role"';
+    const values: string[] = [];
+    if (id) {
+      query += ' where id=$1';
+      values.push(id);
+      if (actor.role !== "SU") {
+        if (!actor.companyId) throw new Error("companyId is required");
+        query += ' and "companyId"=$2';
+        values.push(actor.companyId);
+      }
+    } else if (actor.role !== "SU") {
+      if (!actor.companyId) throw new Error("companyId is required");
+      query += ' where "companyId"=$1';
+      values.push(actor.companyId);
+    }
+    query += ' order by name asc';
+    const roleRows = await getPgPool().query(query, values);
+    
+    const rolesList = [];
+    for (const r of roleRows.rows) {
+      const permRows = await getPgPool().query('select * from public."RolePermission" where "roleId"=$1', [r.id]);
+      
+      const permissionsMap: Record<string, any> = {};
+      for (const p of permRows.rows) {
+        permissionsMap[p.moduleId] = {
+          read: p.canRead,
+          create: p.canCreate,
+          update: p.canUpdate,
+          delete: p.canDelete,
+          microroles: p.actions || {}
+        };
+      }
+      
+      rolesList.push({
+        id: r.id,
+        key_id: r.key,
+        name: r.name,
+        description: r.description,
+        scope: r.scope,
+        company_id: r.companyId,
+        status: "active",
+        permissions: permissionsMap
+      });
+    }
+    return rolesList;
+  }
+
   if (table === "modules") {
     if (id) {
       const one = await getPgPool().query("select * from public.modules where id=$1", [id]);
       return one.rows;
     }
     const all = await getPgPool().query("select * from public.modules order by sort_order asc, name asc");
+    staticStoreCache["modules"] = {
+      data: all.rows,
+      expiresAt: Date.now() + STATIC_CACHE_TTL_MS
+    };
     return all.rows;
   }
   if (table === "st_multidata") {
+    if (id) {
+      const one = await getPgPool().query('select "Initials_PK" as "Initials_PK", "name", "value", "type", "typeDescription", "typeUse", "created_at", "updated_at" from public."st_Multidata" where value=$1', [id]);
+      return one.rows;
+    }
     const all = await getPgPool().query('select "Initials_PK" as "Initials_PK", "name", "value", "type", "typeDescription", "typeUse", "created_at", "updated_at" from public."st_Multidata"');
+    staticStoreCache["st_multidata"] = {
+      data: all.rows,
+      expiresAt: Date.now() + STATIC_CACHE_TTL_MS
+    };
     return all.rows;
   }
 
@@ -658,34 +854,52 @@ export async function listRecords(actor: ActorContext, tableParam: string, id: s
   }
   if (actor.role !== "SU" && COMPANY_SCOPED_TABLES.has(table)) {
     if (!actor.companyId) throw new Error("companyId is required for non-SU actors");
-    const companyCol = table === "users" ? '"companyId"' : 'companyid';
+    const companyCol = (table === "users") ? '"companyId"' : 'companyid';
     query += id ? ` and ${companyCol}=$2` : ` where ${companyCol}=$1`;
     values.push(actor.companyId);
   }
   const result = await getPgPool().query(query, values);
+
+  if (isStaticTable && !id) {
+    staticStoreCache[table] = {
+      data: result.rows,
+      expiresAt: Date.now() + STATIC_CACHE_TTL_MS
+    };
+  }
   return result.rows;
 }
 
 export async function createRecord(actor: ActorContext, tableParam: string, payload: Record<string, unknown>) {
   const table = normalizeTable(tableParam);
+  if (["modules", "st_multidata", "st_country", "st_state", "st_city"].includes(table)) {
+    invalidateStoreCache(table);
+  }
   if (table === "modules") return createModuleRecord(actor, payload);
   if (table === "st_multidata") return createStMultidataRecord(actor, payload);
   if (table === "users") return createPlatformUserRecord(actor, payload);
+  if (table === "roles") return createRoleRecord(actor, payload);
   ensureSu(actor);
   throw new Error(`Create is not enabled for table '${table}'`);
 }
 
 export async function updateRecord(actor: ActorContext, tableParam: string, id: string, patch: Record<string, unknown>) {
   const table = normalizeTable(tableParam);
+  if (["modules", "st_multidata", "st_country", "st_state", "st_city"].includes(table)) {
+    invalidateStoreCache(table);
+  }
   if (table === "modules") return updateModuleRecord(actor, id, patch);
   if (table === "st_multidata") return updateStMultidataRecord(actor, id, patch);
   if (table === "users") return updatePlatformUserRecord(actor, id, patch);
+  if (table === "roles") return updateRoleRecord(actor, id, patch);
   ensureSu(actor);
   throw new Error(`Update is not enabled for table '${table}'`);
 }
 
 export async function deleteRecord(actor: ActorContext, tableParam: string, id: string) {
   const table = normalizeTable(tableParam);
+  if (["modules", "st_multidata", "st_country", "st_state", "st_city"].includes(table)) {
+    invalidateStoreCache(table);
+  }
   if (table === "modules") {
     await softDeleteModuleRecord(actor, id);
     return;
@@ -696,6 +910,10 @@ export async function deleteRecord(actor: ActorContext, tableParam: string, id: 
   }
   if (table === "users") {
     await deletePlatformUserRecord(actor, id);
+    return;
+  }
+  if (table === "roles") {
+    await deleteRoleRecord(actor, id);
     return;
   }
   ensureSu(actor);

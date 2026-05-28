@@ -152,7 +152,25 @@ async function ensureUserStatusCatalog() {
   }
 }
 
-async function readCatalogDb() {
+
+type CatalogCache = {
+  data: CatalogDb;
+  expiresAt: number;
+} | null;
+
+let catalogCache: CatalogCache = null;
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+export function invalidateCatalogCache() {
+  catalogCache = null;
+}
+
+async function readCatalogDb(): Promise<CatalogDb> {
+  const now = Date.now();
+  if (catalogCache && catalogCache.expiresAt > now) {
+    return catalogCache.data;
+  }
+
   try {
     const [companyRows, multidataRows, countryRows, stateRows, cityRows] = await Promise.all([
       getPool().query('SELECT id, "commercialName" FROM "Company" ORDER BY "commercialName" ASC'),
@@ -206,17 +224,25 @@ async function readCatalogDb() {
       name: String(row.commercialName ?? row.id)
     }));
 
-    return {
+    const result: CatalogDb = {
       companies: companies.length > 0 ? companies : defaultCatalogDb.companies,
       countries: countries.length > 0 ? countries : defaultCatalogDb.countries,
       departmentsByCountry: Object.keys(departmentsByCountry).length > 0 ? departmentsByCountry : defaultCatalogDb.departmentsByCountry,
       citiesByDepartment: Object.keys(citiesByDepartment).length > 0 ? citiesByDepartment : defaultCatalogDb.citiesByDepartment,
       multidataByGroup: Object.keys(multidataByGroup).length > 0 ? multidataByGroup : defaultCatalogDb.multidataByGroup
     };
+
+    catalogCache = {
+      data: result,
+      expiresAt: Date.now() + CACHE_TTL_MS
+    };
+
+    return result;
   } catch {
     return defaultCatalogDb;
   }
 }
+
 
 function assertCatalogValue(condition: boolean, message: string) {
   if (!condition) {

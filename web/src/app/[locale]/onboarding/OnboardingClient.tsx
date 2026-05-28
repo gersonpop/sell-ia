@@ -38,6 +38,22 @@ export function OnboardingClient({locale, email, provider, defaultFullName}: Pro
 
   useEffect(() => {
     async function loadBaseCatalogs() {
+      const cacheKey = "onboarding_bootstrap";
+      if (typeof window !== "undefined") {
+        const cached = localStorage.getItem(cacheKey);
+        if (cached) {
+          try {
+            const data = JSON.parse(cached);
+            setCompanies(data.companies ?? []);
+            setGenders(data.genders ?? []);
+            setCountries(data.countries ?? []);
+            return;
+          } catch {
+            // Ignore parse error
+          }
+        }
+      }
+
       const response = await fetch("/api/v1/auth/social/onboarding/bootstrap");
       const data = await response.json();
 
@@ -50,9 +66,22 @@ export function OnboardingClient({locale, email, provider, defaultFullName}: Pro
         });
       };
 
+      const rawGenders = (data.genders ?? []) as Array<{value: string; label: string}>;
+      const finalGenders = uniqueByValue(rawGenders);
       setCompanies(data.companies ?? []);
-      setGenders(uniqueByValue(data.genders ?? []));
+      setGenders(finalGenders);
       setCountries(data.countries ?? []);
+
+      if (typeof window !== "undefined") {
+        localStorage.setItem(
+          cacheKey,
+          JSON.stringify({
+            companies: data.companies ?? [],
+            genders: finalGenders,
+            countries: data.countries ?? []
+          })
+        );
+      }
     }
     void loadBaseCatalogs();
   }, []);
@@ -62,9 +91,28 @@ export function OnboardingClient({locale, email, provider, defaultFullName}: Pro
       return;
     }
     async function loadDepartments() {
+      const cacheKey = `onboarding_deps_${form.country}`;
+      if (typeof window !== "undefined") {
+        const cached = localStorage.getItem(cacheKey);
+        if (cached) {
+          try {
+            const data = JSON.parse(cached);
+            setDepartments(data ?? []);
+            return;
+          } catch {
+            // Ignore parse error
+          }
+        }
+      }
+
       const response = await fetch(`/api/v1/auth/social/onboarding/departments?countryCode=${encodeURIComponent(form.country)}`);
       const data = await response.json();
-      setDepartments(data.items ?? []);
+      const items = data.items ?? [];
+      setDepartments(items);
+
+      if (typeof window !== "undefined") {
+        localStorage.setItem(cacheKey, JSON.stringify(items));
+      }
     }
     void loadDepartments();
   }, [form.country]);
@@ -74,11 +122,30 @@ export function OnboardingClient({locale, email, provider, defaultFullName}: Pro
       return;
     }
     async function loadCities() {
+      const cacheKey = `onboarding_cities_${form.country}_${form.department}`;
+      if (typeof window !== "undefined") {
+        const cached = localStorage.getItem(cacheKey);
+        if (cached) {
+          try {
+            const data = JSON.parse(cached);
+            setCities(data ?? []);
+            return;
+          } catch {
+            // Ignore parse error
+          }
+        }
+      }
+
       const response = await fetch(
         `/api/v1/auth/social/onboarding/cities?countryCode=${encodeURIComponent(form.country)}&departmentCode=${encodeURIComponent(form.department)}`
       );
       const data = await response.json();
-      setCities(data.items ?? []);
+      const items = data.items ?? [];
+      setCities(items);
+
+      if (typeof window !== "undefined") {
+        localStorage.setItem(cacheKey, JSON.stringify(items));
+      }
     }
     void loadCities();
   }, [form.country, form.department]);
